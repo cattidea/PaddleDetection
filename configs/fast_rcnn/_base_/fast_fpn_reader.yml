@@ -26,7 +26,7 @@ EvalReader:
   batch_size: 1
   shuffle: false
   drop_last: false
-  proposal_file: dataset/coco/coco_2017_val_box_proposals_21bc3a.pkl
+  proposal_file: dataset/coco/coco_2017_val_box_proposals_ee0dad.pkl
 
 
 TestReader:
