@@ -6,9 +6,7 @@ English | [简体中文](README_cn.md)
 - [Introduction](#Introduction)
 - [Installation](#Installation)
 - [Model Zoo](#Model_Zoo)
-- [Feature Tracking Model](#Feature_Tracking_Model)
 - [Dataset Preparation](#Dataset_Preparation)
-- [Getting Start](#Getting_Start)
 - [Citations](#Citations)
 
 ## Introduction
@@ -26,8 +24,15 @@ Paddledetection implements three MOT algorithms of these two series.
 
 - [FairMOT](https://arxiv.org/abs/2004.01888) is based on an Anchor Free detector Centernet, which overcomes the problem of anchor and feature misalignment in anchor based detection framework. The fusion of deep and shallow features enables the detection and ReID tasks to obtain the required features respectively. It also uses low dimensional ReID features. FairMOT is a simple baseline composed of two homogeneous branches propose to predict the pixel level target score and ReID features. It achieves the fairness between the two tasks and  obtains a higher level of real-time MOT performance.
 
-<div align="center">
-  <img src="../../docs/images/mot16_jde.gif" width=500 />
+[PP-Tracking](../../deploy/pptracking/README.md) is the first open source real-time tracking system based on PaddlePaddle deep learning framework. Aiming at the difficulties and pain points of the actual business, PP-Tracking has built-in capabilities and industrial applications such as pedestrian and vehicle tracking, cross-camera tracking, multi-class tracking, small target tracking and traffic counting, and provides a visual development interface. The model integrates multi-object tracking, object detection and ReID lightweight algorithm to further improve the deployment performance of PP-Tracking on the server. It also supports Python and C + + deployment and adapts to Linux, NVIDIA and Jetson multi platform environment.。
+<div width="1000" align="center">
+  <img src="../../docs/images/pptracking.png"/>
+</div>
+
+<div width="1000" align="center">
+  <img src="../../docs/images/pptracking-demo.gif"/>
+  <br>
+  video source：VisDrone2021, BDD100K dataset</div>
 </div>
 
 
@@ -202,6 +207,19 @@ If you use a stronger detection model, you can get better results. Each txt is t
 |  KITTI        | 1088x608 |  82.7 |    -   |    -   |[model](https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608_kitti_vehicle.pdparams) | [config](./vehicle/fairmot_dla34_30e_1088x608_kitti_vehicle.yml) |
 |  VisDrone     | 1088x608 |  52.1 |   63.3 |    -   | [model](https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608_visdrone_vehicle.pdparams) | [config](./vehicle/fairmot_dla34_30e_1088x608_visdrone_vehicle.yml) |
 
+- base models
+    - [DeepSORT](deepsort/README.md)
+    - [JDE](jde/README.md)
+    - [FairMOT](fairmot/README.md)
+- feature models
+    - [Pedestrian](pedestrian/README.md)
+    - [Head](headtracking21/README.md)
+    - [Vehicle](vehicle/README.md)
+- Multi-Class Tracking
+    - [MCFairMOT](mcfairmot/README.md)
+- Multi-Target Multi-Camera Tracking
+    - [MTMCT](mtmct/README.md)
+
 ## Dataset Preparation
 
 ### MOT Dataset
@@ -273,78 +291,6 @@ dataset/mot
   |——————PRW
 ```
 
-## Getting Start
-
-### 1. Training
-
-Training FairMOT on 2 GPUs with following command
-
-```bash
-python -m paddle.distributed.launch --log_dir=./fairmot_dla34_30e_1088x608/ --gpus 0,1 tools/train.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml
-```
-
-### 2. Evaluation
-
-Evaluating the track performance of FairMOT on val dataset in single GPU with following commands:
-
-```bash
-# use weights released in PaddleDetection model zoo
-CUDA_VISIBLE_DEVICES=0 python tools/eval_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams
-
-# use saved checkpoint in training
-CUDA_VISIBLE_DEVICES=0 python tools/eval_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=output/fairmot_dla34_30e_1088x608/model_final.pdparams
-```
-**Notes:**
- The default evaluation dataset is MOT-16 Train Set. If you want to change the evaluation dataset, please refer to the following code and modify `configs/datasets/mot.yml`, modify `data_root`：
-```
-EvalMOTDataset:
-  !MOTImageFolder
-    dataset_dir: dataset/mot
-    data_root: MOT17/images/train
-    keep_ori_im: False # set True if save visualization images or video
-```
-
-### 3. Inference
-
-Inference a vidoe on single GPU with following command:
-
-```bash
-# inference on video and save a video
-CUDA_VISIBLE_DEVICES=0 python tools/infer_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams --video_file={your video name}.mp4 --frame_rate=20 --save_videos
-```
-
-Inference a image folder on single GPU with following command:
-
-```bash
-# inference image folder and save a video
-CUDA_VISIBLE_DEVICES=0 python tools/infer_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams --image_dir={your infer images folder} --save_videos
-```
-
-**Notes:**
- Please make sure that [ffmpeg](https://ffmpeg.org/ffmpeg.html) is installed first, on Linux(Ubuntu) platform you can directly install it by the following command:`apt-get update && apt-get install -y ffmpeg`. `--frame_rate` means the frame rate of the video and the frames extracted per second. It can be set by yourself, default value is -1 indicating the video frame rate read by OpenCV.
-
-
-### 4. Export model
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams
-```
-
-### 5. Using exported model for python inference
-
-```bash
-python deploy/python/mot_jde_infer.py --model_dir=output_inference/fairmot_dla34_30e_1088x608 --video_file={your video name}.mp4 --device=GPU --save_mot_txts
-```
-**Notes:**
-The tracking model is used to predict the video, and does not support the prediction of a single image. The visualization video of the tracking results is saved by default. You can add `--save_mot_txts` to save the txt result file, or `--save_images` to save the visualization images.
-
-### 6. Using exported MOT and keypoint model for unite python inference
-
-```bash
-python deploy/python/mot_keypoint_unite_infer.py --mot_model_dir=output_inference/fairmot_dla34_30e_1088x608/ --keypoint_model_dir=output_inference/higherhrnet_hrnet_w32_512/ --video_file={your video name}.mp4 --device=GPU
-```
-**Notes:**
- Keypoint model export tutorial: `configs/keypoint/README.md`.
 
 ## Citations
 ```

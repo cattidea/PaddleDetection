@@ -15,7 +15,7 @@
 // The code is based on:
 // https://github.com/CnybTseng/JDE/blob/master/platforms/common/trajectory.cpp
 // Ths copyright of CnybTseng/JDE is as follows:
-// MIT License 
+// MIT License
 
 #include <algorithm>
 

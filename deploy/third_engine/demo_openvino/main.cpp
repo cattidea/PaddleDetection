@@ -214,7 +214,6 @@ void draw_bboxes(const cv::Mat& bgr, const std::vector<BoxInfo>& bboxes, object_
 
         cv::rectangle(image, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)),
             color, -1);
-
         cv::putText(image, text, cv::Point(x, y + label_size.height),
             cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 255, 255));
         cv::imwrite("../predict.jpg",image);
@@ -247,7 +246,6 @@ int webcam_demo(PicoDet& detector, int cam_id)
 {
     cv::Mat image;
     cv::VideoCapture cap(cam_id);
-
     while (true)
     {
         cap >> image;

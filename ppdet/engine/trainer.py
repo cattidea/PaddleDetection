@@ -22,6 +22,7 @@ import copy
 import time
 
 import numpy as np
+import typing
 from PIL import Image, ImageOps
 
 import paddle
@@ -119,6 +120,10 @@ class Trainer(object):
             steps_per_epoch = len(self.loader)
             self.lr = create('LearningRate')(steps_per_epoch)
             self.optimizer = create('OptimizerBuilder')(self.lr, self.model)
+
+        if self.cfg.get('unstructured_prune'):
+            self.pruner = create('UnstructuredPruner')(self.model,
+                                                       steps_per_epoch)
 
         self._nranks = dist.get_world_size()
         self._local_rank = dist.get_rank()
@@ -436,9 +441,10 @@ class Trainer(object):
                     # model backward
                     loss.backward()
                     self.optimizer.step()
-
                 curr_lr = self.optimizer.get_lr()
                 self.lr.step()
+                if self.cfg.get('unstructured_prune'):
+                    self.pruner.step()
                 self.optimizer.clear_grad()
                 self.status['learning_rate'] = curr_lr
 
@@ -455,6 +461,8 @@ class Trainer(object):
             if self.use_ema:
                 weight = copy.deepcopy(self.model.state_dict())
                 self.model.set_dict(self.ema.apply())
+            if self.cfg.get('unstructured_prune'):
+                self.pruner.update_params()
 
             self._compose_callback.on_epoch_end(self.status)
 
@@ -506,7 +514,11 @@ class Trainer(object):
             for metric in self._metrics:
                 metric.update(data, outs)
 
-            sample_num += data['im_id'].numpy().shape[0]
+            # multi-scale inputs: all inputs have same im_id
+            if isinstance(data, typing.Sequence):
+                sample_num += data[0]['im_id'].numpy().shape[0]
+            else:
+                sample_num += data['im_id'].numpy().shape[0]
             self._compose_callback.on_step_end(self.status)
 
         self.status['sample_num'] = sample_num
@@ -550,7 +562,10 @@ class Trainer(object):
             outs = self.model(data)
 
             for key in ['im_shape', 'scale_factor', 'im_id']:
-                outs[key] = data[key]
+                if isinstance(data, typing.Sequence):
+                    outs[key] = data[0][key]
+                else:
+                    outs[key] = data[key]
             for key, value in outs.items():
                 if hasattr(value, 'numpy'):
                     outs[key] = value.numpy()

@@ -6,9 +6,7 @@
 - [简介](#简介)
 - [安装依赖](#安装依赖)
 - [模型库](#模型库)
-- [特色垂类跟踪模型](#特色垂类跟踪模型)
 - [数据集准备](#数据集准备)
-- [快速开始](#快速开始)
 - [引用](#引用)
 
 ## 简介
@@ -26,8 +24,15 @@ PaddleDetection实现了这两个系列的3种多目标跟踪算法。
 
 - [FairMOT](https://arxiv.org/abs/2004.01888)以Anchor Free的CenterNet检测器为基础，克服了Anchor-Based的检测框架中anchor和特征不对齐问题，深浅层特征融合使得检测和ReID任务各自获得所需要的特征，并且使用低维度ReID特征，提出了一种由两个同质分支组成的简单baseline来预测像素级目标得分和ReID特征，实现了两个任务之间的公平性，并获得了更高水平的实时多目标跟踪精度。
 
-<div align="center">
-  <img src="../../docs/images/mot16_jde.gif" width=500 />
+[PP-Tracking](../../deploy/pptracking/README.md)是基于PaddlePaddle深度学习框架的业界首个开源实时跟踪系统。针对实际业务的难点痛点，PP-Tracking内置行人车辆跟踪、跨镜头跟踪、多类别跟踪、小目标跟踪及流量计数等能力与产业应用，同时提供可视化开发界面。模型集成多目标跟踪，目标检测，ReID轻量级算法，进一步提升PP-Tracking在服务器端部署性能。同时支持python，C++部署，适配Linux，Nvidia Jetson多平台环境。
+<div width="1000" align="center">
+  <img src="../../docs/images/pptracking.png"/>
+</div>
+
+<div width="1000" align="center">
+  <img src="../../docs/images/pptracking-demo.gif"/>
+  <br>
+  视频来源：VisDrone2021, BDD100K开源数据集</div>
 </div>
 
 
@@ -202,6 +207,18 @@ wget https://dataset.bj.bcebos.com/mot/det_results_dir.zip
 |  VisDrone     | 1088x608 |  52.1 |   63.3 |    -   | [下载链接](https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608_visdrone_vehicle.pdparams) | [配置文件](./vehicle/fairmot_dla34_30e_1088x608_visdrone_vehicle.yml) |
 
 
+- 基础模型
+    - [DeepSORT](deepsort/README_cn.md)
+    - [JDE](jde/README_cn.md)
+    - [FairMOT](fairmot/README_cn.md)
+- 特色垂类模型
+    - [行人跟踪](pedestrian/README_cn.md)
+    - [人头跟踪](headtracking21/README_cn.md)
+    - [车辆跟踪](vehicle/README_cn.md)
+- 多类别跟踪
+    - [多类别跟踪](mcfairmot/README_cn.md)
+- 跨境头跟踪
+    - [跨境头跟踪](mtmct/README_cn.md)
 
 ## 数据集准备
 
@@ -272,77 +289,6 @@ dataset/mot
   |——————PRW
 ```
 
-## 快速开始
-
-### 1. 训练
-
-FairMOT使用2个GPU通过如下命令一键式启动训练
-
-```bash
-python -m paddle.distributed.launch --log_dir=./fairmot_dla34_30e_1088x608/ --gpus 0,1 tools/train.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml
-```
-
-### 2. 评估
-
-FairMOT使用单张GPU通过如下命令一键式启动评估
-
-```bash
-# 使用PaddleDetection发布的权重
-CUDA_VISIBLE_DEVICES=0 python tools/eval_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams
-
-# 使用训练保存的checkpoint
-CUDA_VISIBLE_DEVICES=0 python tools/eval_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=output/fairmot_dla34_30e_1088x608/model_final.pdparams
-```
-**注意:**
- 默认评估的是MOT-16 Train Set数据集，如需换评估数据集可参照以下代码修改`configs/datasets/mot.yml`，修改`data_root`：
-```
-EvalMOTDataset:
-  !MOTImageFolder
-    dataset_dir: dataset/mot
-    data_root: MOT17/images/train
-    keep_ori_im: False # set True if save visualization images or video
-```
-
-### 3. 预测
-
-使用单个GPU通过如下命令预测一个视频，并保存为视频
-
-```bash
-# 预测一个视频
-CUDA_VISIBLE_DEVICES=0 python tools/infer_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams --video_file={your video name}.mp4 --frame_rate=20 --save_videos
-```
-
-使用单个GPU通过如下命令预测一个图片文件夹，并保存为视频
-
-```bash
-# 预测一个图片文件夹
-CUDA_VISIBLE_DEVICES=0 python tools/infer_mot.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams --image_dir={your infer images folder} --save_videos
-```
-
-**注意:**
- 请先确保已经安装了[ffmpeg](https://ffmpeg.org/ffmpeg.html), Linux(Ubuntu)平台可以直接用以下命令安装：`apt-get update && apt-get install -y ffmpeg`。`--frame_rate`表示视频的帧率，表示每秒抽取多少帧，可以自行设置，默认为-1表示会使用OpenCV读取的视频帧率。
-
-### 4. 导出预测模型
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python tools/export_model.py -c configs/mot/fairmot/fairmot_dla34_30e_1088x608.yml -o weights=https://paddledet.bj.bcebos.com/models/mot/fairmot_dla34_30e_1088x608.pdparams
-```
-
-### 5. 用导出的模型基于Python去预测
-
-```bash
-python deploy/python/mot_jde_infer.py --model_dir=output_inference/fairmot_dla34_30e_1088x608 --video_file={your video name}.mp4 --device=GPU --save_mot_txts
-```
-**注意:**
- 跟踪模型是对视频进行预测，不支持单张图的预测，默认保存跟踪结果可视化后的视频，可添加`--save_mot_txts`表示保存跟踪结果的txt文件，或`--save_images`表示保存跟踪结果可视化图片。
-
-### 6. 用导出的跟踪和关键点模型Python联合预测
-
-```bash
-python deploy/python/mot_keypoint_unite_infer.py --mot_model_dir=output_inference/fairmot_dla34_30e_1088x608/ --keypoint_model_dir=output_inference/higherhrnet_hrnet_w32_512/ --video_file={your video name}.mp4 --device=GPU
-```
-**注意:**
- 关键点模型导出教程请参考`configs/keypoint/README.md`。
 
 ## 引用
 ```

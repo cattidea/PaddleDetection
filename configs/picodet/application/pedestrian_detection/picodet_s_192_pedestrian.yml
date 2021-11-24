@@ -141,3 +141,4 @@ TestReader:
   - PadBatch: {pad_to_stride: 32}
   batch_size: 1
   shuffle: false
+  fuse_normalize: true
