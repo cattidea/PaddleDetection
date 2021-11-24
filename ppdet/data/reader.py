@@ -95,7 +95,9 @@ class BatchCompose(Compose):
                 tmp_data = []
                 for i in range(len(data)):
                     tmp_data.append(data[i][k])
-                if not 'gt_' in k and not 'is_crowd' in k and not 'difficult' in k:
+                if not 'gt_' in k and not 'is_crowd' in k \
+                        and not 'difficult' in k and not 'proposal' in k \
+                        or 'proposal_num' == k:
                     tmp_data = np.stack(tmp_data, axis=0)
                 batch_data[k] = tmp_data
         return batch_data
@@ -138,18 +140,20 @@ class BaseDataLoader(object):
                  drop_last=False,
                  num_classes=80,
                  collate_batch=True,
+                 proposal_file=None,
                  use_shared_memory=False,
                  **kwargs):
         # sample transform
         self._sample_transforms = Compose(
             sample_transforms, num_classes=num_classes)
 
-        # batch transfrom 
+        # batch transfrom
         self._batch_transforms = BatchCompose(batch_transforms, num_classes,
                                               collate_batch)
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.drop_last = drop_last
+        self.proposal_file = proposal_file
         self.use_shared_memory = use_shared_memory
         self.kwargs = kwargs
 
@@ -161,6 +165,8 @@ class BaseDataLoader(object):
         self.dataset = dataset
         self.dataset.check_or_download_dataset()
         self.dataset.parse_dataset()
+        # load proposals into dataset
+        self.dataset.load_proposals_into_dataset(self.proposal_file)
         # get data
         self.dataset.set_transform(self._sample_transforms)
         # set kwargs

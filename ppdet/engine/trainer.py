@@ -81,7 +81,8 @@ class Trainer(object):
             # JDE only support single class MOT now.
 
         if cfg.architecture == 'FairMOT' and self.mode == 'train':
-            cfg['FairMOTEmbeddingHead']['num_identities_dict'] = self.dataset.num_identities_dict
+            cfg['FairMOTEmbeddingHead'][
+                'num_identities_dict'] = self.dataset.num_identities_dict
             # FairMOT support single class and multi-class MOT now.
 
         # build model
@@ -371,6 +372,46 @@ class Trainer(object):
             model.train()
             iter_tic = time.time()
             for step_id, data in enumerate(self.loader):
+                # #######################################
+                # #######################################
+                # for k, v in data.items():
+                #     if k == 'im_id':
+                #         print(k)
+                #         print(type(v))
+                #         print(v)
+                #         print('-------------')
+                #     elif k == 'gt_class':
+                #         print(k)
+                #         print(type(v))
+                #         print(v)
+                #         print('-------------')
+                #     elif k == 'gt_bbox':
+                #         print(k)
+                #         print(type(v))
+                #         print(v)
+                #         print('-------------')
+                #     elif k == 'im_shape':
+                #         print(k)
+                #         print(type(v))
+                #         print(v)
+                #         print('-------------')
+                #     elif k == 'proposal_boxes':
+                #         print(k)
+                #         print(type(v))
+                #         print(v)
+                #         print('-------------')
+                #     elif k == 'proposal_num':
+                #         print(k)
+                #         print(type(v))
+                #         print(v)
+                #         print('-------------')
+                #     elif k == 'image':
+                #         print(k)
+                #         print(type(v))
+                #         print(v.shape)
+                #         print('-------------')
+                # #######################################
+                # #######################################
                 self.status['data_time'].update(time.time() - iter_tic)
                 self.status['step_id'] = step_id
                 profiler.add_profiler_step(profiler_options)

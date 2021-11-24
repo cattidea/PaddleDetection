@@ -6,6 +6,7 @@
 #   
 #     http://www.apache.org/licenses/LICENSE-2.0    
 from . import meta_arch
+from . import fast_rcnn
 from . import faster_rcnn
 from . import mask_rcnn
 from . import yolo

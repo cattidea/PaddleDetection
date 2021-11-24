@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import os
+import copy
+import pickle
 import numpy as np
 
 try:
@@ -22,7 +24,9 @@ except Exception:
 from paddle.io import Dataset
 from ppdet.core.workspace import register, serializable
 from ppdet.utils.download import get_dataset_path
-import copy
+
+from ppdet.utils.logger import setup_logger
+logger = setup_logger(__name__)
 
 
 @serializable
@@ -104,6 +108,34 @@ class DetDataset(Dataset):
     def parse_dataset(self, ):
         raise NotImplementedError(
             "Need to implement parse_dataset method of Dataset")
+
+    def load_proposals_into_dataset(self, proposal_file=None):
+        if proposal_file is None:
+            return
+
+        logger.info("Loading proposals from: {}".format(proposal_file))
+        with open(proposal_file, 'rb') as f:
+            proposals = pickle.load(f, encoding='latin1')
+
+        # Fetch the indexes of all proposals that are in the dataset
+        # Convert image_id to str since they could be int.
+        img_ids = set({str(int(record["im_id"])) for record in self.roidbs})
+        id_to_index = {
+            str(id): i
+            for i, id in enumerate(proposals["ids"]) if str(id) in img_ids
+        }
+
+        for record in self.roidbs:
+            # Get the index of the proposal
+            i = id_to_index[str(int(record["im_id"]))]
+
+            boxes = proposals["boxes"][i]
+            objectness_logits = proposals["objectness_logits"][i]
+            # Sort the proposals in descending order of the scores
+            inds = objectness_logits.argsort()[::-1]
+            record["proposal_boxes"] = boxes[inds]
+            record["proposal_num"] = boxes[inds].shape[0]
+            record["proposal_objectness_logits"] = objectness_logits[inds]
 
     def get_anno(self):
         if self.anno_path is None:
